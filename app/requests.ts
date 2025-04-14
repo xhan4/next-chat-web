@@ -1,27 +1,7 @@
-import type { ChatRequest, ChatReponse } from "./api/chat/typing";
 import { Message } from "./store";
 
 const TIME_OUT_MS = 30000;
 
-const makeRequestParam = (
-  messages: Message[],
-  options?: {
-    filterBot?: boolean;
-  }
-): ChatRequest => {
-  let sendMessages = messages.map((v) => ({
-    role: v.role,
-    content: v.content,
-  }));
-
-  if (options?.filterBot) {
-    sendMessages = sendMessages.filter((m) => m.role !== "assistant");
-  }
-
-  return {
-    messages: sendMessages,
-  };
-};
 
 export async function createChat() {
  const res = await fetch("http://localhost:8000/create_chat", {
@@ -56,7 +36,7 @@ export async function requestChat(userInput: string) {
     body: JSON.stringify({ user_input: userInput }),
   });
 
-  return (await res.json()) as ChatReponse;
+  return await res.json()
 }
 
 
