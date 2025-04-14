@@ -28,11 +28,11 @@ jobs:
         dst_token:  ${{ secrets.GITEE_TOKEN }}
         static_list: "next-chat"
         force_update: true
-    #目录权限
-    - name: Reset permissions for checkout
-      run: |
-        sudo chown -R runner:runner /home/runner/work/next-chat/next-chat
-        sudo chmod -R 755 /home/runner/work/next-chat/next-chat
+    # #目录权限
+    # - name: Reset permissions for checkout
+    #   run: |
+    #     sudo chown -R runner:runner /home/runner/work/next-chat/next-chat
+    #     sudo chmod -R 755 /home/runner/work/next-chat/next-chat
     # 检出代码
     - name: Checkout code
       uses: actions/checkout@v3
