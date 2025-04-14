@@ -4,7 +4,7 @@ const TIME_OUT_MS = 30000;
 
 
 export async function createChat() {
- const res = await fetch("http://localhost:8000/create_chat", {
+ const res = await fetch("/create_chat", {
    method: "POST",
    headers: {
      "Content-Type": "application/json",
@@ -16,8 +16,7 @@ export async function createChat() {
  return data.session_id;
 }
 export async function deleteChat(session_id:string) {
-  console.log(session_id,'s')
-  const res = await fetch(`http://localhost:8000/delete_session/${session_id}`, {
+  const res = await fetch(`/delete_session/${session_id}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -28,7 +27,7 @@ export async function deleteChat(session_id:string) {
  }
 export async function requestChat(userInput: string) {
    console.log(userInput,'messages')
-  const res = await fetch("http://localhost:8000/chat", {
+  const res = await fetch("/chat", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -59,7 +58,7 @@ export async function requestChatStream(
   const reqTimeoutId = setTimeout(() => controller.abort(), TIME_OUT_MS);
 
   try {
-    const res = await fetch("http://localhost:8000/chat", {
+    const res = await fetch("/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
