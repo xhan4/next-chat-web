@@ -1,6 +1,14 @@
 /** @type {import('next').NextConfig} */
-
+const rewrites = () => {
+  return [
+    {
+      source: "/api/:path*",
+      destination: "http://localhost:8000/api/:path*",
+    },
+  ];
+};
 const nextConfig = {
+  rewrites,
   experimental: {
     appDir: true,
   },
