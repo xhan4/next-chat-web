@@ -8,6 +8,10 @@ const rewrites = () => {
   ];
 };
 const nextConfig = {
+  // 基础路径配置（适用于部署在子目录）
+  basePath: process.env.BASE_PATH || '', 
+    // 静态资源路径前缀
+  assetPrefix: process.env.BASE_PATH || '', 
   rewrites,
   experimental: {
     appDir: true,
