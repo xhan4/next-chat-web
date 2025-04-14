@@ -12,6 +12,7 @@ const nextConfig = {
   experimental: {
     appDir: true,
   },
+  output:'standalone',
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/,

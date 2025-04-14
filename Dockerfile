@@ -1,34 +1,37 @@
 # 构建阶段
 FROM node:20-alpine3.19 AS builder
 
-# 设置 npm 镜像源
+# 设置镜像源
 RUN npm config set registry https://registry.npmmirror.com/
-
-# 安装 pnpm 并设置 pnpm 镜像源
 RUN npm install -g pnpm@latest && pnpm config set registry https://registry.npmmirror.com/
-# 将前端源码复制到 /next-chat 目录中
+
 WORKDIR /next-chat
 
-# 复制整个项目，除了 node_modules 和 dist 等目录
-COPY  package.json pnpm-lock.yaml /next-chat/
-
-# 使用 pnpm 安装依赖
+# 复制依赖文件并安装
+COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
+# 复制源码并构建
 COPY . .
-
-# 编译项目
 RUN pnpm run build
 
 # 部署阶段
-FROM node:20-alpine3.19 as runner
+FROM node:20-alpine3.19 AS runner
 
 WORKDIR /next-chat
 
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
+# 创建非root用户（可选）
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001 -G nodejs
+
+# 从构建阶段复制必要文件
+COPY --from=builder /next-chat/public ./public
+COPY --from=builder /next-chat/.next ./.next
+COPY --from=builder /next-chat/node_modules ./node_modules
+COPY --from=builder /next-chat/package.json ./package.json
+
+# 设置用户权限（若创建了用户）
+USER nextjs
 
 EXPOSE 3000
 
