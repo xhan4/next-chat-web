@@ -2,8 +2,8 @@
 const rewrites = () => {
   return [
     {
-      source: "/api/:path*",
-      destination: "https://laicuinan.cn/chat_api/api/:path*",
+      source: "/chat_api/:path*",
+      destination: "https://laicuinan.cn/chat_api/:path*",
     },
   ];
 };
