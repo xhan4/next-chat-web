@@ -44,16 +44,10 @@ export async function requestChatStream(
   session_id:string,
   options?: {
     filterBot?: boolean;
-    onMessage: (message: string) => void;
+    onMessage: (message: string, done: boolean) => void;
     onError: (error: Error) => void;
   }
 ) {
-  // const req = makeRequestParam(messages, {
-  //   filterBot: options?.filterBot,
-  // });
-
-  // console.log("[Request] ", req);
-
   const controller = new AbortController();
   const reqTimeoutId = setTimeout(() => controller.abort(), TIME_OUT_MS);
 
@@ -63,43 +57,86 @@ export async function requestChatStream(
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ user_input: userInput,session_id:session_id}),
+      body: JSON.stringify({
+        user_input: userInput,
+        session_id: session_id
+      }),
       signal: controller.signal,
     });
     clearTimeout(reqTimeoutId);
 
-    let responseText = await res.json();
+    let responseText = "";
+    let lastActionType = "";
+    let currentMessage = "";
+    let isNewAction = true;
 
     const finish = () => {
-      options?.onMessage(responseText.response);
+      if (currentMessage) {
+        responseText += currentMessage + "\n";
+      }
+      options?.onMessage(responseText.trim(), true);
       controller.abort();
     };
 
-    // if (res.ok) {
-    //   const reader = res.body?.getReader();
-    //   const decoder = new TextDecoder();
+    if (res.ok) {
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
 
-    //   while (true) {
-    //     // handle time out, will stop if no response in 10 secs
-    //     const resTimeoutId = setTimeout(() => finish(), TIME_OUT_MS);
-    //     const content = await reader?.read();
-    //     clearTimeout(resTimeoutId);
-    //     const text = decoder.decode(content?.value);
-    //     responseText += text;
-
-    //     const done = !content || content.done;
-    //     options?.onMessage(responseText);
-
-    //     if (done) {
-    //       break;
-    //     }
-    //   }
-
-      finish();
-    // } else {
-    //   console.error("Stream Error");
-    //   options?.onError(new Error("Stream Error"));
-    // }
+      while (true) {
+        const resTimeoutId = setTimeout(() => finish(), TIME_OUT_MS);
+        const content = await reader?.read();
+        clearTimeout(resTimeoutId);
+        
+        if (!content || content.done) {
+          finish();
+          break;
+        }
+        
+        const text = decoder.decode(content.value);
+        
+        // Split the text by newlines to handle multiple JSON objects
+        const lines = text.split('\n');
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              // Remove "data: " prefix if it exists
+              const jsonStr = line.replace(/^data: /, '').trim();
+              if (!jsonStr) continue;
+              
+              const jsonData = JSON.parse(jsonStr);
+              if (jsonData.content) {
+                const actionType = jsonData.type;
+                
+                // Handle new action type
+                if (actionType && lastActionType !== actionType) {
+                  if (currentMessage) {
+                    responseText += currentMessage + "\n\n\n";
+                  }
+                  currentMessage = "";
+                  isNewAction = true;
+                }
+                
+                // Append new content
+                currentMessage += jsonData.content;
+                
+                // Update response text and notify
+                const fullText = (responseText + currentMessage).trim();
+                lastActionType = actionType;
+                options?.onMessage(fullText, false);
+              } else if (jsonData.type === 'done') {
+                finish();
+                return;
+              }
+            } catch (e) {
+              console.error('Error parsing JSON:', e);
+            }
+          }
+        }
+      }
+    } else {
+      console.error("Stream Error");
+      options?.onError(new Error("Stream Error"));
+    }
   } catch (err) {
     console.error("NetWork Error");
     options?.onError(new Error("NetWork Error"));

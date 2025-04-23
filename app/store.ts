@@ -9,6 +9,7 @@ export type Message ={
   role:string
   date?: string;
   content:string
+  streaming?: boolean,
 };
 
 export enum SubmitKey {
@@ -228,6 +229,7 @@ export const useChatStore = create<ChatStore>()(
           content: "",
           role: "assistant",
           date: new Date().toLocaleString(),
+          streaming: true,
         };
 
         // get recent messages
@@ -242,10 +244,14 @@ export const useChatStore = create<ChatStore>()(
 
         console.log("[User Input] ", sendMessages);
         requestChatStream(content,id,{
-          onMessage(content) {
+          onMessage(content, done) {
+            if (done) {
+              botMessage.streaming = false;
               get().onNewMessage(botMessage);
+            } else {
               botMessage.content = content;
               set(() => ({}));
+            }
           },
           onError(error) {
             botMessage.content += "\n\n" + Locale.Store.Error;
